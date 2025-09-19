@@ -1,6 +1,9 @@
 CREATE DATABASE IF NOT EXISTS jel_aircon;
 USE jel_aircon;
 
+
+ALTER TABLE payments ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
 -- Users table for authentication
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -95,3 +98,5 @@ INSERT INTO services (name, description, price, duration) VALUES
 ('AC Cleaning', 'Thorough cleaning of AC unit', 800.00, 60),
 ('AC Repair', 'Diagnosis and repair of AC issues', 1500.00, 90),
 ('AC Maintenance', 'Routine maintenance service', 600.00, 45);
+
+

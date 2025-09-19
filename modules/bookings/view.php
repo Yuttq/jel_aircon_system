@@ -165,38 +165,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 
             <!-- Payment Information Card -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">Payment Information</h6>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title mb-0">Payment Information</h6>
+        <?php if (!$payment): ?>
+            <a href="../payments/add.php?booking_id=<?php echo $bookingId; ?>" class="btn btn-sm btn-primary">
+                <i class="fas fa-money-bill me-1"></i> Record Payment
+            </a>
+        <?php endif; ?>
+    </div>
+    <div class="card-body">
+        <?php if ($payment): ?>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Amount:</strong> ₱<?php echo number_format($payment['amount'], 2); ?></p>
+                    <p><strong>Method:</strong> <?php echo ucfirst(str_replace('_', ' ', $payment['payment_method'])); ?></p>
                 </div>
-                <div class="card-body">
-                    <?php if ($payment): ?>
-                        <p><strong>Amount:</strong> ₱<?php echo number_format($payment['amount'], 2); ?></p>
-                        <p><strong>Method:</strong> <?php echo ucfirst(str_replace('_', ' ', $payment['payment_method'])); ?></p>
-                        <p><strong>Status:</strong> 
-                            <span class="badge bg-<?php 
-                                switch ($payment['status']) {
-                                    case 'pending': echo 'warning';
-                                    case 'completed': echo 'success';
-                                    case 'failed': echo 'danger';
-                                    default: echo 'secondary';
-                                }
-                            ?>">
-                                <?php echo ucfirst($payment['status']); ?>
-                            </span>
-                        </p>
-                        <p><strong>Date:</strong> <?php echo date('F j, Y g:i A', strtotime($payment['payment_date'])); ?></p>
-                        
-                        <?php if ($payment['notes']): ?>
-                            <p><strong>Notes:</strong> <?php echo nl2br(htmlspecialchars($payment['notes'])); ?></p>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <p class="text-muted">No payment recorded yet.</p>
-                        <a href="../payments/add.php?booking_id=<?php echo $bookingId; ?>" class="btn btn-sm btn-primary">
-                            <i class="fas fa-money-bill me-1"></i> Record Payment
-                        </a>
-                    <?php endif; ?>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-<?php 
+                            switch ($payment['status']) {
+                                case 'pending': echo 'warning';
+                                case 'completed': echo 'success';
+                                case 'failed': echo 'danger';
+                                default: echo 'secondary';
+                            }
+                        ?>">
+                            <?php echo ucfirst($payment['status']); ?>
+                        </span>
+                    </p>
+                    <p><strong>Date:</strong> <?php echo date('F j, Y g:i A', strtotime($payment['payment_date'])); ?></p>
                 </div>
             </div>
+            
+            <?php if ($payment['notes']): ?>
+                <div class="mt-3">
+                    <strong>Notes:</strong>
+                    <p class="mb-0"><?php echo nl2br(htmlspecialchars($payment['notes'])); ?></p>
+                </div>
+            <?php endif; ?>
+            
+            <div class="mt-3">
+                <a href="../payments/edit.php?id=<?php echo $payment['id']; ?>" class="btn btn-sm btn-outline-primary me-2">
+                    <i class="fas fa-edit me-1"></i> Edit Payment
+                </a>
+            </div>
+        <?php else: ?>
+            <p class="text-muted mb-0">No payment recorded yet.</p>
+        <?php endif; ?>
+    </div>
+</div>
 
             <!-- Actions Card -->
             <div class="card">

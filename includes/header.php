@@ -17,24 +17,28 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../index.php">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../modules/bookings/">Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../modules/customers/">Customers</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../modules/technicians/">Technicians</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../modules/services/">Services</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../modules/reports/">Reports</a>
-                    </li>
+            <li class="nav-item">
+                <a class="nav-link" href="../index.php">Dashboard</a>
+            </li>
+    <li class="nav-item">
+        <a class="nav-link" href="../modules/bookings/">Bookings</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="../modules/customers/">Customers</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="../modules/technicians/">Technicians</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="../modules/services/">Services</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="../modules/payments/">Payments</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="../modules/reports/">Reports</a>
+    </li>
+</ul>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
