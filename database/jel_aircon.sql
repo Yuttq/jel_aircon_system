@@ -1,9 +1,6 @@
 CREATE DATABASE IF NOT EXISTS jel_aircon;
 USE jel_aircon;
 
-
-ALTER TABLE payments ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-
 -- Users table for authentication
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,7 +63,7 @@ CREATE TABLE bookings (
     FOREIGN KEY (technician_id) REFERENCES technicians(id) ON DELETE SET NULL
 );
 
--- Payments table
+-- Payments table (with created_at included from the start)
 CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     booking_id INT NOT NULL,
@@ -75,6 +72,7 @@ CREATE TABLE payments (
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
     notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
@@ -98,5 +96,3 @@ INSERT INTO services (name, description, price, duration) VALUES
 ('AC Cleaning', 'Thorough cleaning of AC unit', 800.00, 60),
 ('AC Repair', 'Diagnosis and repair of AC issues', 1500.00, 90),
 ('AC Maintenance', 'Routine maintenance service', 600.00, 45);
-
-

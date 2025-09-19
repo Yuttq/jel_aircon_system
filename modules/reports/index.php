@@ -26,12 +26,20 @@ $bookingsStmt->execute();
 $bookingStats = $bookingsStmt->fetch();
 
 $customersStmt = $pdo->prepare("
-    SELECT COUNT(*) as total_customers,
-    COUNT(DISTINCT customer_id) as active_customers
+    SELECT COUNT(*) as total_customers
     FROM customers
 ");
 $customersStmt->execute();
-$customerStats = $customersStmt->fetch();
+$customerCount = $customersStmt->fetchColumn();
+
+// Count active customers (those with bookings)
+$activeCustomersStmt = $pdo->prepare("
+    SELECT COUNT(DISTINCT customer_id) as active_customers
+    FROM bookings
+    WHERE booking_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+");
+$activeCustomersStmt->execute();
+$activeCustomerCount = $activeCustomersStmt->fetchColumn();
 
 // Get recent payments for the dashboard
 $recentPaymentsStmt = $pdo->prepare("
@@ -69,12 +77,14 @@ $recentPayments = $recentPaymentsStmt->fetchAll();
                                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                         Revenue (Monthly)</div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ₱<?php echo number_format($revenueStats['current_month'], 2); ?>
+                                        ₱<?php echo number_format($revenueStats['current_month'] ?? 0, 2); ?>
                                     </div>
                                     <div class="mt-1 text-muted text-sm">
                                         <?php
-                                        $revenueChange = $revenueStats['previous_month'] > 0 ? 
-                                            (($revenueStats['current_month'] - $revenueStats['previous_month']) / $revenueStats['previous_month']) * 100 : 0;
+                                        $previousMonth = $revenueStats['previous_month'] ?? 0;
+                                        $currentMonth = $revenueStats['current_month'] ?? 0;
+                                        $revenueChange = $previousMonth > 0 ? 
+                                            (($currentMonth - $previousMonth) / $previousMonth) * 100 : 0;
                                         $revenueClass = $revenueChange >= 0 ? 'text-success' : 'text-danger';
                                         $revenueIcon = $revenueChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
                                         ?>
@@ -101,12 +111,12 @@ $recentPayments = $recentPaymentsStmt->fetchAll();
                                     <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                         Total Bookings (30 days)</div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <?php echo $bookingStats['total_bookings']; ?>
+                                        <?php echo $bookingStats['total_bookings'] ?? 0; ?>
                                     </div>
                                     <div class="mt-1 text-muted text-sm">
                                         <span class="text-success">
                                             <i class="fas fa-check-circle"></i> 
-                                            <?php echo $bookingStats['completed_bookings']; ?> completed
+                                            <?php echo $bookingStats['completed_bookings'] ?? 0; ?> completed
                                         </span>
                                     </div>
                                 </div>
@@ -126,12 +136,12 @@ $recentPayments = $recentPaymentsStmt->fetchAll();
                                     <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                         Customers</div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <?php echo $customerStats['total_customers']; ?>
+                                        <?php echo $customerCount; ?>
                                     </div>
                                     <div class="mt-1 text-muted text-sm">
                                         <span class="text-info">
                                             <i class="fas fa-users"></i> 
-                                            <?php echo $customerStats['active_customers']; ?> active
+                                            <?php echo $activeCustomerCount; ?> active
                                         </span>
                                     </div>
                                 </div>
@@ -151,7 +161,7 @@ $recentPayments = $recentPaymentsStmt->fetchAll();
                                     <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                         Total Revenue</div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ₱<?php echo number_format($revenueStats['total_revenue'], 2); ?>
+                                        ₱<?php echo number_format($revenueStats['total_revenue'] ?? 0, 2); ?>
                                     </div>
                                     <div class="mt-1 text-muted text-sm">
                                         <span class="text-warning">
