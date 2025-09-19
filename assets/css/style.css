@@ -1,0 +1,43 @@
+.avatar-sm, .avatar-xl {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+}
+
+.avatar-xl {
+    width: 80px;
+    height: 80px;
+    font-size: 24px;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #6e707e;
+}
+
+.btn-group .btn {
+    border-radius: 0.35rem;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
