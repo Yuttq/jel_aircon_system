@@ -8,8 +8,9 @@ define('DB_PASS', '');
 // Base URL
 define('BASE_URL', 'http://localhost/jel_aircon_system/');
 
-// Start session
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Create database connection
 try {

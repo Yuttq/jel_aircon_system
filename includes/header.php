@@ -20,6 +20,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="../index.php">Dashboard</a>
             </li>
+            
     <li class="nav-item">
         <a class="nav-link" href="../modules/bookings/">Bookings</a>
     </li>
@@ -38,6 +39,9 @@
     <li class="nav-item">
         <a class="nav-link" href="../modules/reports/">Reports</a>
     </li>
+     <li class="nav-item">
+    <a class="nav-link" href="../customer_portal/login.php">Customer Portal</a>
+</li>
 </ul>
                 </ul>
                 <ul class="navbar-nav">

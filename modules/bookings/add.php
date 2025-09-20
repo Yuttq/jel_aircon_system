@@ -304,6 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const serviceSelect = document.getElementById('service_id');
         const dateInput = document.getElementById('booking_date');
         const timeInput = document.getElementById('start_time');
+
+        
         
         if (!customerSelect.value) {
             customerSelect.classList.add('is-invalid');
@@ -339,6 +341,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// After booking is successfully created:
+if ($success) {
+    // Send confirmation notification
+    include '../../includes/notifications.php';
+    sendBookingConfirmation($booking_id);
+}
 </script>
 
 <?php include '../../includes/footer.php'; ?>
