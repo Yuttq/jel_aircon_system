@@ -96,3 +96,19 @@ INSERT INTO services (name, description, price, duration) VALUES
 ('AC Cleaning', 'Thorough cleaning of AC unit', 800.00, 60),
 ('AC Repair', 'Diagnosis and repair of AC issues', 1500.00, 90),
 ('AC Maintenance', 'Routine maintenance service', 600.00, 45);
+
+
+-- Notifications log table
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    email_sent TINYINT(1) DEFAULT 0,
+    sms_sent TINYINT(1) DEFAULT 0,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+);
+
+-- Add reminder_sent column to bookings table
+ALTER TABLE bookings ADD COLUMN reminder_sent TINYINT(1) DEFAULT 0;

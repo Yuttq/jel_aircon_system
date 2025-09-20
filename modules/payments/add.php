@@ -70,10 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $success = 'Payment recorded successfully!';
             $_POST = []; // Clear form
+            // After successful payment
+if ($success) {
+    include '../../includes/notifications.php';
+    sendPaymentConfirmation($pdo->lastInsertId());
+}
             
         } catch (PDOException $e) {
             $errors['database'] = 'Error recording payment: ' . $e->getMessage();
+            
         }
+        
     }
 }
 ?>

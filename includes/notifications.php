@@ -1,38 +1,102 @@
 <?php
-// notifications.php - Notification functions for JEL AirCon System
+require_once 'notification_config.php';
 
 /**
- * Send email notification
+ * Send email notification with template support
  */
-function sendEmailNotification($to, $subject, $message, $headers = '') {
-    if (empty($headers)) {
-        $headers = "From: JEL Air Conditioning <noreply@jelaircon.com>\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+function sendEmailNotification($to, $template_name, $template_data = []) {
+    if (!NOTIFICATION_ENABLED || !EMAIL_NOTIFICATIONS) {
+        error_log("Email notifications are disabled");
+        return true; // Return true to prevent blocking operations
     }
     
-    // In a real implementation, you would use PHPMailer or similar
-    // For now, we'll log the email and return true for testing
-    error_log("EMAIL NOTIFICATION: To: $to, Subject: $subject, Message: $message");
+    global $notification_templates;
     
-    // Uncomment to actually send emails in production:
+    if (!isset($notification_templates[$template_name])) {
+        error_log("Email template not found: $template_name");
+        return false;
+    }
+    
+    $template = $notification_templates[$template_name];
+    $subject = $template['email_subject'];
+    
+    // Load and parse email template
+    $template_file = EMAIL_TEMPLATE_DIR . $template['email_template'];
+    if (!file_exists($template_file)) {
+        error_log("Email template file not found: $template_file");
+        return false;
+    }
+    
+    $message = file_get_contents($template_file);
+    $message = parseTemplate($message, $template_data);
+    $subject = parseTemplate($subject, $template_data);
+    
+    // Headers
+    $headers = "From: " . EMAIL_FROM_NAME . " <" . EMAIL_FROM . ">\r\n";
+    $headers .= "Reply-To: " . EMAIL_REPLY_TO . "\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+    
+    // Log for development
+    error_log("EMAIL NOTIFICATION: To: $to, Subject: $subject");
+    
+    // Uncomment for production:
     // return mail($to, $subject, $message, $headers);
     
     return true; // Simulate success for development
 }
 
 /**
- * Send SMS notification (simulated - would integrate with SMS gateway)
+ * Send SMS notification
  */
-function sendSMSNotification($phone, $message) {
-    // Simulate SMS sending - in production, integrate with Twilio, etc.
+function sendSMSNotification($phone, $template_name, $template_data = []) {
+    if (!NOTIFICATION_ENABLED || !SMS_NOTIFICATIONS) {
+        error_log("SMS notifications are disabled");
+        return true; // Return true to prevent blocking operations
+    }
+    
+    global $notification_templates;
+    
+    if (!isset($notification_templates[$template_name])) {
+        error_log("SMS template not found: $template_name");
+        return false;
+    }
+    
+    $template = $notification_templates[$template_name];
+    $message = parseTemplate($template['sms_template'], $template_data);
+    
+    // Clean phone number (remove spaces, dashes, etc.)
+    $phone = preg_replace('/[^0-9]/', '', $phone);
+    
+    // For Philippines numbers, ensure proper format
+    if (strlen($phone) === 10 && substr($phone, 0, 2) === '09') {
+        $phone = '63' . substr($phone, 1); // Convert to international format
+    }
+    
     error_log("SMS NOTIFICATION: To: $phone, Message: $message");
-    return true;
+    
+    // In production, integrate with SMS gateway like Twilio, Nexmo, etc.
+    // return sendViaSMSGateway($phone, $message);
+    
+    return true; // Simulate success for development
+}
+
+/**
+ * Parse template with data
+ */
+function parseTemplate($template, $data) {
+    foreach ($data as $key => $value) {
+        if (is_string($value)) {
+            $template = str_replace('{' . $key . '}', $value, $template);
+        }
+    }
+    return $template;
 }
 
 /**
  * Send booking confirmation notification
  */
-function sendBookingConfirmation($bookingId) {
+function sendBookingConfirmation($booking_id) {
     global $pdo;
     
     $stmt = $pdo->prepare("
@@ -43,45 +107,34 @@ function sendBookingConfirmation($bookingId) {
         JOIN services s ON b.service_id = s.id
         WHERE b.id = ?
     ");
-    $stmt->execute([$bookingId]);
+    $stmt->execute([$booking_id]);
     $booking = $stmt->fetch();
     
     if (!$booking) return false;
     
-    // Email notification
-    $subject = "Booking Confirmation - JEL Air Conditioning";
-    $message = "
-        <h2>Booking Confirmed</h2>
-        <p>Dear {$booking['first_name']},</p>
-        <p>Your booking has been confirmed with the following details:</p>
-        
-        <table>
-            <tr><td><strong>Service:</strong></td><td>{$booking['service_name']}</td></tr>
-            <tr><td><strong>Date:</strong></td><td>" . date('F j, Y', strtotime($booking['booking_date'])) . "</td></tr>
-            <tr><td><strong>Time:</strong></td><td>" . date('g:i A', strtotime($booking['start_time'])) . "</td></tr>
-            <tr><td><strong>Price:</strong></td><td>₱" . number_format($booking['service_price'], 2) . "</td></tr>
-        </table>
-        
-        <p>We will contact you if there are any changes to your booking.</p>
-        <p>Thank you for choosing JEL Air Conditioning!</p>
-    ";
+    $template_data = [
+        'first_name' => $booking['first_name'],
+        'last_name' => $booking['last_name'],
+        'service' => $booking['service_name'],
+        'date' => date('F j, Y', strtotime($booking['booking_date'])),
+        'time' => date('g:i A', strtotime($booking['start_time'])),
+        'price' => '₱' . number_format($booking['service_price'], 2),
+        'booking_id' => $booking['id']
+    ];
     
-    $emailSent = sendEmailNotification($booking['email'], $subject, $message);
+    $email_sent = sendEmailNotification($booking['email'], 'booking_confirmation', $template_data);
+    $sms_sent = sendSMSNotification($booking['phone'], 'booking_confirmation', $template_data);
     
-    // SMS notification
-    $smsMessage = "JEL AirCon: Your booking for {$booking['service_name']} on " . 
-                  date('M j', strtotime($booking['booking_date'])) . " at " . 
-                  date('g:i A', strtotime($booking['start_time'])) . " is confirmed. Thank you!";
+    // Log notification
+    logNotification($booking_id, 'booking_confirmation', $email_sent, $sms_sent);
     
-    $smsSent = sendSMSNotification($booking['phone'], $smsMessage);
-    
-    return $emailSent && $smsSent;
+    return $email_sent && $sms_sent;
 }
 
 /**
  * Send booking reminder notification
  */
-function sendBookingReminder($bookingId) {
+function sendBookingReminder($booking_id) {
     global $pdo;
     
     $stmt = $pdo->prepare("
@@ -92,44 +145,32 @@ function sendBookingReminder($bookingId) {
         JOIN services s ON b.service_id = s.id
         WHERE b.id = ? AND b.status IN ('confirmed', 'pending')
     ");
-    $stmt->execute([$bookingId]);
+    $stmt->execute([$booking_id]);
     $booking = $stmt->fetch();
     
     if (!$booking) return false;
     
-    // Email reminder
-    $subject = "Reminder: Upcoming Service - JEL Air Conditioning";
-    $message = "
-        <h2>Service Reminder</h2>
-        <p>Dear {$booking['first_name']},</p>
-        <p>This is a friendly reminder about your upcoming service:</p>
-        
-        <table>
-            <tr><td><strong>Service:</strong></td><td>{$booking['service_name']}</td></tr>
-            <tr><td><strong>Date:</strong></td><td>" . date('F j, Y', strtotime($booking['booking_date'])) . "</td></tr>
-            <tr><td><strong>Time:</strong></td><td>" . date('g:i A', strtotime($booking['start_time'])) . "</td></tr>
-        </table>
-        
-        <p>Please ensure someone will be available at the premises during the service time.</p>
-        <p>If you need to reschedule, please contact us at least 24 hours in advance.</p>
-    ";
+    $template_data = [
+        'first_name' => $booking['first_name'],
+        'service' => $booking['service_name'],
+        'date' => date('F j', strtotime($booking['booking_date'])),
+        'time' => date('g:i A', strtotime($booking['start_time'])),
+        'booking_id' => $booking['id']
+    ];
     
-    $emailSent = sendEmailNotification($booking['email'], $subject, $message);
+    $email_sent = sendEmailNotification($booking['email'], 'booking_reminder', $template_data);
+    $sms_sent = sendSMSNotification($booking['phone'], 'booking_reminder', $template_data);
     
-    // SMS reminder
-    $smsMessage = "JEL AirCon Reminder: {$booking['service_name']} scheduled for " . 
-                  date('M j', strtotime($booking['booking_date'])) . " at " . 
-                  date('g:i A', strtotime($booking['start_time'])) . ". Please be available.";
+    // Log notification
+    logNotification($booking_id, 'booking_reminder', $email_sent, $sms_sent);
     
-    $smsSent = sendSMSNotification($booking['phone'], $smsMessage);
-    
-    return $emailSent && $smsSent;
+    return $email_sent && $sms_sent;
 }
 
 /**
  * Send status update notification
  */
-function sendStatusUpdate($bookingId, $newStatus) {
+function sendStatusUpdate($booking_id, $new_status) {
     global $pdo;
     
     $stmt = $pdo->prepare("
@@ -140,44 +181,41 @@ function sendStatusUpdate($bookingId, $newStatus) {
         JOIN services s ON b.service_id = s.id
         WHERE b.id = ?
     ");
-    $stmt->execute([$bookingId]);
+    $stmt->execute([$booking_id]);
     $booking = $stmt->fetch();
     
     if (!$booking) return false;
     
-    $statusMessages = [
-        'confirmed' => 'has been confirmed',
-        'in-progress' => 'is now in progress',
-        'completed' => 'has been completed',
-        'cancelled' => 'has been cancelled'
+    $status_messages = [
+        'confirmed' => 'confirmed',
+        'in-progress' => 'in progress',
+        'completed' => 'completed',
+        'cancelled' => 'cancelled'
     ];
     
-    $message = $statusMessages[$newStatus] ?? 'status has been updated';
+    $status_text = $status_messages[$new_status] ?? $new_status;
     
-    $subject = "Booking Update - JEL Air Conditioning";
-    $emailMessage = "
-        <h2>Booking Status Update</h2>
-        <p>Dear {$booking['first_name']},</p>
-        <p>Your booking for <strong>{$booking['service_name']}</strong> on " . 
-        date('F j, Y', strtotime($booking['booking_date'])) . " {$message}.</p>
-        
-        <p>Current Status: <strong>" . ucfirst($newStatus) . "</strong></p>
-        
-        <p>If you have any questions, please don't hesitate to contact us.</p>
-    ";
+    $template_data = [
+        'first_name' => $booking['first_name'],
+        'service' => $booking['service_name'],
+        'status' => $status_text,
+        'date' => date('F j, Y', strtotime($booking['booking_date'])),
+        'booking_id' => $booking['id']
+    ];
     
-    $emailSent = sendEmailNotification($booking['email'], $subject, $emailMessage);
+    $email_sent = sendEmailNotification($booking['email'], 'status_update', $template_data);
+    $sms_sent = sendSMSNotification($booking['phone'], 'status_update', $template_data);
     
-    $smsMessage = "JEL AirCon: Your booking for {$booking['service_name']} {$message}. Status: " . ucfirst($newStatus);
-    $smsSent = sendSMSNotification($booking['phone'], $smsMessage);
+    // Log notification
+    logNotification($booking_id, 'status_update', $email_sent, $sms_sent);
     
-    return $emailSent && $smsSent;
+    return $email_sent && $sms_sent;
 }
 
 /**
  * Send payment confirmation notification
  */
-function sendPaymentConfirmation($paymentId) {
+function sendPaymentConfirmation($payment_id) {
     global $pdo;
     
     $stmt = $pdo->prepare("
@@ -189,35 +227,44 @@ function sendPaymentConfirmation($paymentId) {
         JOIN services s ON b.service_id = s.id
         WHERE p.id = ?
     ");
-    $stmt->execute([$paymentId]);
+    $stmt->execute([$payment_id]);
     $payment = $stmt->fetch();
     
     if (!$payment) return false;
     
-    $subject = "Payment Received - JEL Air Conditioning";
-    $message = "
-        <h2>Payment Confirmation</h2>
-        <p>Dear {$payment['first_name']},</p>
-        <p>Thank you for your payment. Here are the details:</p>
-        
-        <table>
-            <tr><td><strong>Service:</strong></td><td>{$payment['service_name']}</td></tr>
-            <tr><td><strong>Service Date:</strong></td><td>" . date('F j, Y', strtotime($payment['booking_date'])) . "</td></tr>
-            <tr><td><strong>Amount Paid:</strong></td><td>₱" . number_format($payment['amount'], 2) . "</td></tr>
-            <tr><td><strong>Payment Method:</strong></td><td>" . ucfirst($payment['payment_method']) . "</td></tr>
-            <tr><td><strong>Payment Date:</strong></td><td>" . date('F j, Y g:i A', strtotime($payment['payment_date'])) . "</td></tr>
-        </table>
-        
-        <p>We appreciate your business!</p>
-    ";
+    $template_data = [
+        'first_name' => $payment['first_name'],
+        'service' => $payment['service_name'],
+        'amount' => '₱' . number_format($payment['amount'], 2),
+        'method' => ucfirst(str_replace('_', ' ', $payment['payment_method'])),
+        'date' => date('F j, Y', strtotime($payment['payment_date'])),
+        'booking_id' => $payment['booking_id']
+    ];
     
-    $emailSent = sendEmailNotification($payment['email'], $subject, $message);
+    $email_sent = sendEmailNotification($payment['email'], 'payment_confirmation', $template_data);
+    $sms_sent = sendSMSNotification($payment['phone'], 'payment_confirmation', $template_data);
     
-    $smsMessage = "JEL AirCon: Payment of ₱" . number_format($payment['amount'], 2) . 
-                  " for {$payment['service_name']} received. Thank you!";
-    $smsSent = sendSMSNotification($payment['phone'], $smsMessage);
+    // Log notification
+    logNotification($payment['booking_id'], 'payment_confirmation', $email_sent, $sms_sent);
     
-    return $emailSent && $smsSent;
+    return $email_sent && $sms_sent;
+}
+
+/**
+ * Log notification in database
+ */
+function logNotification($booking_id, $type, $email_sent, $sms_sent) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO notifications (booking_id, type, email_sent, sms_sent, sent_at)
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        $stmt->execute([$booking_id, $type, (int)$email_sent, (int)$sms_sent]);
+    } catch (PDOException $e) {
+        error_log("Error logging notification: " . $e->getMessage());
+    }
 }
 
 /**
@@ -226,7 +273,11 @@ function sendPaymentConfirmation($paymentId) {
 function scheduleDailyReminders() {
     global $pdo;
     
-    // Get bookings happening tomorrow
+    if (!NOTIFICATION_ENABLED) {
+        return [];
+    }
+    
+    // Get bookings happening tomorrow that haven't been reminded yet
     $tomorrow = date('Y-m-d', strtotime('+1 day'));
     
     $stmt = $pdo->prepare("
@@ -248,5 +299,20 @@ function scheduleDailyReminders() {
     }
     
     return $results;
+}
+
+/**
+ * Get notification history for a booking
+ */
+function getNotificationHistory($booking_id) {
+    global $pdo;
+    
+    $stmt = $pdo->prepare("
+        SELECT * FROM notifications 
+        WHERE booking_id = ? 
+        ORDER BY sent_at DESC
+    ");
+    $stmt->execute([$booking_id]);
+    return $stmt->fetchAll();
 }
 ?>

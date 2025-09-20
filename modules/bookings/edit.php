@@ -88,6 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             )
             AND status NOT IN ('cancelled', 'completed')
         ");
+
+        // After status update
+if ($success && isset($_POST['update_status'])) {
+    include '../../includes/notifications.php';
+    sendStatusUpdate($bookingId, $newStatus);
+}
         
         $conflictStmt->execute([
             $technician_id, 
@@ -129,6 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 
 <?php include '../../includes/header.php'; ?>
 

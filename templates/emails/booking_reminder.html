@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Reminder</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #ff9800; color: white; padding: 20px; text-align: center; }
+        .content { background: #fff3cd; padding: 20px; border-radius: 0 0 5px 5px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Service Reminder</h1>
+            <p>Friendly reminder about your upcoming service</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello {first_name},</p>
+            <p>This is a friendly reminder about your scheduled service tomorrow:</p>
+            
+            <p><strong>Service:</strong> {service}<br>
+               <strong>Time:</strong> {time}</p>
+            
+            <p>Please ensure someone will be available at the premises during the service time.</p>
+            
+            <p>If you need to reschedule or have any questions, please contact us as soon as possible.</p>
+            
+            <p>📞 Phone: [Your Business Phone]<br>
+               📧 Email: [Your Business Email]</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2024 JEL Air Conditioning Services. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

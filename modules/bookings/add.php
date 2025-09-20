@@ -111,6 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $booking_id = $pdo->lastInsertId();
             $success = 'Booking created successfully!';
             
+            // After successful booking creation
+if ($success) {
+    // Send confirmation notification
+    include '../../includes/notifications.php';
+    sendBookingConfirmation($booking_id);
+}
+            
             // Redirect to view page or clear form
             if (isset($_POST['save_and_view'])) {
                 header("Location: view.php?id=$booking_id");
@@ -342,12 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// After booking is successfully created:
-if ($success) {
-    // Send confirmation notification
-    include '../../includes/notifications.php';
-    sendBookingConfirmation($booking_id);
-}
+
 </script>
 
 <?php include '../../includes/footer.php'; ?>
